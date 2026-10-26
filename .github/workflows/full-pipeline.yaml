@@ -1,7 +1,8 @@
 name: Main workflow
 on: [push, workflow_dispatch]
 env:
-  docker_username: ${{ github.actor }} 
+  # Image namespace: the actor can be a bot or a user the token can't publish under
+  docker_username: ${{ github.repository_owner }}
   docker_password: ${{ secrets.GITHUB_TOKEN }} 
   APP_NAME: ${{ github.event.repository.name }}
   BUILD_NUMBER: ${{ github.run_number }}
@@ -34,11 +35,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: [Build]
     steps:
-      - name: Download code
-        uses: actions/download-artifact@v8
+      - name: Clone down repository
+        uses: actions/checkout@v6
         with:
-          name: code
-          path: .
+          # super-linter diffs against main and the push's before-SHA
+          fetch-depth: 0
       - name: run linting
         uses: super-linter/super-linter/slim@v8 
         env:
