@@ -41,7 +41,7 @@ jobs:
           # super-linter diffs against main and the push's before-SHA
           fetch-depth: 0
       - name: run linting
-        uses: super-linter/super-linter/slim@v8 
+        uses: super-linter/super-linter/slim@v9 
         env:
           DEFAULT_BRANCH: main
           # To report GitHub Actions status checks
