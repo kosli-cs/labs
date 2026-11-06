@@ -20,7 +20,7 @@ jobs:
     container: gradle:8.0.1-jdk11
     steps:
       - name: Clone down repository
-        uses: actions/checkout@v6       
+        uses: actions/checkout@v7       
       - name: Build application
         run: bash ci/build-app.sh
       - name: Test
@@ -36,7 +36,7 @@ jobs:
     needs: [Build]
     steps:
       - name: Clone down repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           # super-linter diffs against main and the push's before-SHA
           fetch-depth: 0
