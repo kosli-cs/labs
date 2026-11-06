@@ -15,10 +15,10 @@ Now is the time to dig into the world of Kosli.
 
 Kosli uses **Flows** and **Trails** to organize and track your software delivery processes:
 
-- A **Flow** represents a repeatable business or software process (like your CI/CD pipeline). It defines what you want to track and what compliance requirements must be met.
-- A **Trail** represents a single execution instance of that Flow. For example, each git commit or pull request creates a new Trail that tracks all activities for that specific change.
+- A **Flow** models a repeatable business or software process (like your CI/CD pipeline). It is the container for everything that happens within that process.
+- A **Trail** represents a single execution of that Flow, such as one CI build or one pull request. You begin a Trail each time the process runs, and you choose its identifier (a git commit SHA, a PR number, a release ticket ID) so that Trails map to concepts your team already works with.
 
-Think of a Flow as a template for your process, and Trails as the individual instances where you record what actually happened.
+Think of a Flow as the container for your process, and Trails as the individual executions where you record what actually happened. What a *compliant* Trail must contain is defined by a **Flow Template**, which you'll add in Lab 4.
 
 ## Prerequisites
 
@@ -37,8 +37,8 @@ In this lab, you will:
 - Generate an API key for authentication
 - Create a Kosli Flow to represent your CI/CD pipeline
 - Begin a Trail manually using a git commit as the identifier
-- Create shell scripts to integrate Flow and Trail management into your GitHub Actions workflow
-- Verify the Flow and Trail appear in the Kosli web interface
+- Add Flow and Trail steps to your GitHub Actions workflow
+- Verify the Flow and Trail appear in the Kosli app
 
 ### Step-by-step instructions
 
@@ -53,16 +53,17 @@ curl -fL https://raw.githubusercontent.com/kosli-dev/cli/refs/heads/main/install
 kosli version
 ```
 
-> :bulb: if this installation method fails, we have other, head over to the [install section of the docs](https://docs.kosli.com/getting_started/install/#part-2-install-kosli-cli) to learn more.
+> :bulb: If this installation method fails, see [Install Kosli CLI](https://docs.kosli.com/getting_started/install) for alternative installation options.
 
 #### Create a Kosli API Key
 
-- Log in to [https://app.kosli.com/settings/profile](https://app.kosli.com/settings/profile)
-- Navigate to the "API Keys" section
-- Click "Add API Key"
-- Give it a descriptive name (e.g., "CLI Access" or "Local Development")
-- Copy the generated API key immediately (it won't be shown again)
-- Paste it in somewhere you can get it again during these labs, you might need it several times.
+- In the Kosli app, open **Profile** from the user menu in the top-right corner ([https://app.kosli.com/settings/profile](https://app.kosli.com/settings/profile))
+- In the **API keys** section, click **Add API key**
+- Choose a Time-To-Live (TTL) that covers the duration of the labs, and add a descriptive label (e.g., "Kosli labs")
+- Click **Add** and copy the key immediately. Kosli only stores a hash of it, so it is shown once and cannot be retrieved later
+- Paste it somewhere you can find it again during these labs, you might need it several times.
+
+> :information_source: This is a **personal API key**, which authenticates as you. For real CI/CD pipelines, use a [service account](https://docs.kosli.com/administration/authentication/service_accounts) API key instead: it is scoped to a single Organization and has an explicit role. For these labs, a personal API key is fine.
 
 **Configure the API key for CLI use:**
 
@@ -72,9 +73,7 @@ export KOSLI_API_TOKEN="your-api-key-here"
 export KOSLI_ORG="your-gh-username"
 ```
 
-</details>
-
-See [Kosli Authentication](https://docs.kosli.com/getting_started/install/#assigning-flags-via-environment-variables) for more details.
+See [Authenticating to Kosli](https://docs.kosli.com/getting_started/authenticating_to_kosli) and [Assigning flags via environment variables](https://docs.kosli.com/getting_started/install#assigning-flags-via-environment-variables) for more details.
 
 #### Create a Flow manually
 
@@ -102,7 +101,7 @@ Last Deployment At:  N/A
 Tags:                None
 ```
 
-> :bulb: The `--use-empty-template` flag creates a Flow without compliance requirements. In Lab 3, you'll learn how to add a template with specific attestation requirements.
+> :bulb: The `--use-empty-template` flag creates a Flow without compliance requirements. In Lab 4, you'll learn how to add a Flow Template with specific attestation requirements.
 
 Visit [app.kosli.com](https://app.kosli.com) and navigate to Flows to see your newly created Flow.
 
@@ -128,18 +127,18 @@ The Trail name is the git commit SHA, which uniquely identifies this execution. 
 
 > :bulb: You can use any naming scheme for Trails (commit SHA, PR number, Jira ticket, etc.). Git commits are common because they're unique and tied to your source code.
 
-- Go to Kosli to see your new trail under your Flow called "labs-pipeline"
+- Go to the Kosli app to see your new Trail under your Flow called "labs-pipeline"
 
 ![first trail](img/first-trail.png)
 
 See [kosli begin trail](https://docs.kosli.com/client_reference/kosli_begin_trail/) for more details and [Flows documentation](https://docs.kosli.com/getting_started/flows/) and [Trails documentation](https://docs.kosli.com/getting_started/trails/) for conceptual understanding.
 
-#### Immutable trails
+#### Immutable Trails
 
-Everything in a trail inside Kosli is immutable, with append-only as the strategy for updates.
-This is important in a compliance setting where the ability to change in data is equal to the risk of tampering with said data.
+Kosli stores each record as an immutable entry. You can update a Trail, but every update is appended as a new event, so the history is never overwritten.
+This is important in a compliance setting, where the ability to change data is equal to the risk of tampering with it.
 
-To explore this feature, let's go back and begin the same trail once more.
+To explore this, let's begin the same Trail once more with a slightly different description.
 
 ```bash
 kosli begin trail $(git rev-parse HEAD) \
@@ -147,7 +146,7 @@ kosli begin trail $(git rev-parse HEAD) \
   --description "Manual trail for testing."
 ```
 
-If this had been a mutable trail, the description would have been updated with a dot at the end, and no record of the change would have been. But try now to do the get trail once more.
+If this had been a mutable Trail, the description would have been updated with a dot at the end, and no record of the change would have been kept. Now get the Trail once more:
 
 ```bash
 kosli get trail $(git rev-parse HEAD) \
@@ -168,7 +167,7 @@ Events:
      Wed, 26 Nov 2025 21:14:33 CET  trail updated
 ```
 
-You see here that every time a new event is happening in the trail, we append that to the trail for auditability purposes.
+Notice that the **Events** section shows both the original `trail started` event and a new `trail updated` event. Every change to a Trail is appended as an event, so the history is preserved for auditability.
 
 #### Integrate Kosli into your CI/CD pipeline
 
@@ -183,7 +182,7 @@ Now let's integrate Flow and Trail creation into your CI/CD pipeline.
 5. Value: Your Kosli API key
 6. Click "Variables"
 7. Click "New repository variable"
-8. Repeat for `KOSLI_ORG` with your organization name
+8. Name it `KOSLI_ORG` and set the value to your Organization name (the same value you exported as `KOSLI_ORG` earlier)
 
 > :bulb: Never commit API keys to your repository via Git. Always use environment variables or secrets management.
 
@@ -244,7 +243,7 @@ git push origin main
 ```
 
 2. Go to GitHub Actions and watch the workflow run
-3. Verify the "Update Flow" and "Kosli start trail" steps complete successfully
+3. Verify the "Setup Kosli CLI", "Create/Update Flow" and "Begin Trail" steps complete successfully
 4. Check the logs to see the Kosli CLI output
 5. Visit [app.kosli.com](https://app.kosli.com) and navigate to your Flow
 6. You should see a new Trail corresponding to your commit
@@ -257,14 +256,14 @@ Before moving to the next lab, ensure you have:
 
 - ✅ Kosli CLI installed and can run `kosli version`
 - ✅ API key created and configured as environment variables
-- ✅ API key and organization name added as GitHub Secrets and variables
+- ✅ API key and Organization name added as GitHub Secrets and variables
 - ✅ Successfully created a Flow manually using the CLI
 - ✅ Successfully created a Trail manually using a git commit SHA
 - ✅ Updated workflow with Kosli steps
 - ✅ Workflow runs successfully with Flow and Trail creation
-- ✅ Can see the Flow and Trails in the Kosli web interface
+- ✅ Can see the Flow and Trails in the Kosli app
 
-If anything did not go according to plan, you can reference our solution pipeline in [pipelines/02-complete.yaml](pipelines\02-complete.yaml)
+If anything did not go according to plan, you can reference our solution pipeline in [pipelines/02-complete.yaml](pipelines/02-complete.yaml)
 
 ## Next Steps
 
@@ -277,3 +276,4 @@ In [Lab 3: Build Controls and Attestations](lab-03-build-controls.md), you'll le
 - [kosli create flow CLI Reference](https://docs.kosli.com/client_reference/kosli_create_flow/)
 - [kosli begin trail CLI Reference](https://docs.kosli.com/client_reference/kosli_begin_trail/)
 - [Kosli CLI Installation](https://docs.kosli.com/getting_started/install)
+- [Authenticating to Kosli](https://docs.kosli.com/getting_started/authenticating_to_kosli)
