@@ -30,7 +30,7 @@ In subsequent labs, you'll integrate Kosli to track all these activities.
 
 In this lab, you will:
 
-- Create a free Kosli account
+- Log in to Kosli with your account
 - Create a copy of the labs repository to your GitHub account
 - Enable GitHub Actions on your copied repository
 - Verify that the pipeline runs successfully and produces artifacts
@@ -38,13 +38,12 @@ In this lab, you will:
 
 ### Step-by-step instructions
 
-#### Create a Kosli account
+#### Log in to Kosli
 
-- Navigate to [kosli.com/sign-up](https://app.kosli.com/sign-up)
-- Choose to sign up with GitHub
-- Complete the registration process
-- Verify your email address if required
-- Log in to [https://app.kosli.com](https://app.kosli.com)
+- Log in to Kosli with your account at [https://app.kosli.com](https://app.kosli.com)
+- If you need help accessing your account, ask your training instructor if you are in doubt
+
+> :information_source: Ask your training instructor if you are in doubt
 
 So far so good :tada:. We will go a lot more in detail with Kosli in the next sections, but for now we need the scaffolding set up.
 
