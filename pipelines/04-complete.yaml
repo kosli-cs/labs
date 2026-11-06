@@ -20,12 +20,12 @@ jobs:
     container: gradle:6-jdk11
     steps:
       - name: Clone down repository
-        uses: actions/checkout@v4 
+        uses: actions/checkout@v7
       - name: Setup Kosli CLI
-        uses: kosli-dev/setup-cli-action@v2
+        uses: kosli-dev/setup-cli-action@v5
         with:
           version:
-            2.11.32
+            2.54.0
 
       - name: Create/Update Flow
         run: |
@@ -60,7 +60,7 @@ jobs:
             --name application.unit-tests \
             --results-dir app/build/test-results/test/
       - name: Upload repo
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with: 
           name: code
           path: .
@@ -70,12 +70,12 @@ jobs:
     needs: [Build]
     steps:
       - name: Download code
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: code
           path: .
       - name: run linting
-        uses: super-linter/super-linter/slim@v7 
+        uses: super-linter/super-linter/slim@v9
         env:
           DEFAULT_BRANCH: main
           # To report GitHub Actions status checks
@@ -88,12 +88,12 @@ jobs:
       packages: write
     steps:
     - name: Download code
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: code
         path: .
     - name: Log in to GHCR
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
@@ -103,10 +103,10 @@ jobs:
     - name: push docker
       run: bash ci/push-docker.sh
     - name: Setup Kosli CLI
-      uses: kosli-dev/setup-cli-action@v2
+      uses: kosli-dev/setup-cli-action@v5
       with:
         version:
-          2.11.32
+          2.54.0
     - name: Attest Docker image
       run: |
         IMAGE_NAME="ghcr.io/${IMAGE}:latest"
@@ -144,18 +144,18 @@ jobs:
     needs: Docker-image
     steps:
     - name: Download code
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: code
         path: .
     - name: Log in to GHCR
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+      uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
       with:
         image-ref: 'ghcr.io/${{ env.IMAGE }}:latest'
         format: 'table'
@@ -168,12 +168,12 @@ jobs:
     needs: Docker-image
     steps:
     - name: Download code
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: code
         path: .
     - name: Log in to GHCR
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
@@ -185,12 +185,12 @@ jobs:
     needs: Docker-image
     steps:
     - name: Download code
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: code
         path: .
     - name: Log in to GHCR
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
@@ -202,21 +202,21 @@ jobs:
     needs: [Docker-image, Security-scan, Component-test, Performance-test]
     steps:
     - name: Download code
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: code 
         path: .
     - name: Log in to GHCR
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Setup Kosli CLI
-      uses: kosli-dev/setup-cli-action@v2
+      uses: kosli-dev/setup-cli-action@v5
       with:
         version:
-          2.11.32
+          2.54.0
     - name: Assert Compliance
       run: |
         IMAGE_NAME="ghcr.io/${IMAGE}:latest"

@@ -111,10 +111,10 @@ Add these steps after the "push docker" step:
 
 ```yaml
     - name: Setup Kosli CLI
-      uses: kosli-dev/setup-cli-action@v2
+      uses: kosli-dev/setup-cli-action@v5
       with:
         version:
-          2.11.32
+          2.54.0
     - name: Attest Docker image
       run: |
         IMAGE_NAME="ghcr.io/${IMAGE}:latest"
