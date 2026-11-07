@@ -2,7 +2,7 @@
 
 ## Learning Goals
 
-- Create a Kosli account
+- Log in to Kosli
 - Create a copy of the sample application repository
 - Verify that the CI/CD pipeline runs successfully
 - Understand the basic structure of the application and its deployment process
@@ -11,7 +11,7 @@
 
 Welcome to the first lab!
 
-Before diving into Kosli's features, you need to set up your account and verify that your sample application builds and deploys correctly.
+Before diving into Kosli's features, you need to log in to Kosli and verify that your sample application builds and deploys correctly.
 
 This lab uses a simple [Java application](app) with a complete CI/CD pipeline already configured in GitHub Actions. The pipeline builds the application, creates a Docker image, runs tests, and deploys it.
 
@@ -30,7 +30,7 @@ In subsequent labs, you'll integrate Kosli to track all these activities.
 
 In this lab, you will:
 
-- Create a free Kosli account
+- Log in to Kosli with your account
 - Create a copy of the labs repository to your GitHub account
 - Enable GitHub Actions on your copied repository
 - Verify that the pipeline runs successfully and produces artifacts
@@ -38,19 +38,18 @@ In this lab, you will:
 
 ### Step-by-step instructions
 
-#### Create a Kosli account
+#### Log in to Kosli
 
-- Navigate to [kosli.com/sign-up](https://app.kosli.com/sign-up)
-- Choose to sign up with GitHub
-- Complete the registration process
-- Verify your email address if required
-- Log in to [https://app.kosli.com](https://app.kosli.com)
+- Log in to the Kosli app with your account at [https://app.kosli.com](https://app.kosli.com) (or [https://app.us.kosli.com](https://app.us.kosli.com) if your Organization is hosted in the US)
+- Depending on how your Organization is set up, you sign in with single sign-on, Magic Link or GitHub
+
+> :information_source: If you need help accessing your account, ask your training instructor.
 
 So far so good :tada:. We will go a lot more in detail with Kosli in the next sections, but for now we need the scaffolding set up.
 
 #### Make a copy of the repository
 
-- Navigate to the labs repositorys main page (the repository you're currently viewing)
+- Navigate to the labs repository's main page (the repository you're currently viewing)
 - Click the "Use this template" button in the top-right corner of the page
 - Select "Create a new repository"
 - Select your personal GitHub account as the "Owner" and name the repository `labs`
@@ -61,7 +60,7 @@ So far so good :tada:. We will go a lot more in detail with Kosli in the next se
 
 > :bulb: From now on the term "your repository" will mean your copy of the labs repository.
 
-#### Enable GitHub Actions and configure secrets
+#### Enable GitHub Actions
 
 1. Go to your repository on GitHub
 2. Click on the "Actions" tab
@@ -122,7 +121,7 @@ So far so good :tada:. We will go a lot more in detail with Kosli in the next se
 
 Before moving to the next lab, ensure you have:
 
-- ✅ A Kosli account at app.kosli.com with an organization created
+- ✅ Logged in to the Kosli app with access to your Organization
 - ✅ A copy of the labs repository under your GitHub account
 - ✅ GitHub Actions successfully completed all jobs in the workflow
 - ✅ A Docker image published to your GitHub Container Registry
@@ -134,10 +133,11 @@ No cleanup is required for this lab. The deployed container is automatically sto
 
 ## Next Steps
 
-In [Lab 2: Flows and Trails](lab-02-flows-and-trails.md), you'll learn how to install the Kosli CLI, create flows and trails, and start integrating Kosli into your CI/CD pipeline.
+In [Lab 2: Flows and Trails](lab-02-flows-and-trails.md), you'll learn how to install the Kosli CLI, create Flows and Trails, and start integrating Kosli into your CI/CD pipeline.
 
 ## Resources
 
 - [Kosli Documentation](https://docs.kosli.com/)
-- [Getting Started with Kosli](https://docs.kosli.com/getting_started/)
+- [What is Kosli?](https://docs.kosli.com/understand_kosli/what_is_kosli)
+- [How Kosli works](https://docs.kosli.com/understand_kosli/how_kosli_works)
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)

@@ -127,17 +127,6 @@ jobs:
         format: 'spdx-json'
         output-file: 'sbom.spdx.json'
         upload-artifact: false
-    - name: Attest SBOM
-      run: |
-        IMAGE_NAME="ghcr.io/${IMAGE}:latest"
-        kosli attest generic \
-          --flow ${APP_NAME}-pipeline \
-          --trail ${GIT_COMMIT} \
-          --name docker-image.sbom \
-          --artifact-type oci ${IMAGE_NAME} \
-          --attachments sbom.spdx.json \
-          --registry-username  ${{ github.actor }} \
-          --registry-password ${{ secrets.GITHUB_TOKEN }}
 
   Security-scan:
     runs-on: ubuntu-latest
@@ -158,11 +147,31 @@ jobs:
       uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
       with:
         image-ref: 'ghcr.io/${{ env.IMAGE }}:latest'
-        format: 'table'
+        format: 'json'
+        output: 'trivy-results.json'
         #exit-code: '1' #Defaults to 0 meaning that the action will not fail the build if vulnerabilities are found
         ignore-unfixed: true
         vuln-type: 'os,library'
         severity: 'CRITICAL,HIGH'
+    - name: Setup Kosli CLI
+      uses: kosli-dev/setup-cli-action@v5
+      with:
+        version:
+          2.54.0
+    - name: Attest vulnerability scan
+      run: |
+        IMAGE_NAME="ghcr.io/${IMAGE}:latest"
+        kosli attest generic \
+          --flow ${APP_NAME}-pipeline \
+          --trail ${GIT_COMMIT} \
+          --name docker-image.security-scan \
+          --artifact-type oci ${IMAGE_NAME} \
+          --compliant=true \
+          --description "Trivy vulnerability scan" \
+          --attachments trivy-results.json \
+          --annotate scan_tool=trivy \
+          --registry-username ${{ github.actor }} \
+          --registry-password ${{ secrets.GITHUB_TOKEN }}
   Component-test:
     runs-on: ubuntu-latest
     needs: Docker-image
