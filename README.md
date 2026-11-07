@@ -1,10 +1,10 @@
 # Kosli Learning Labs
 
-This repository contains hands-on learning labs to help DevOps engineers, Platform engineers, and software developers get familiar with [Kosli](https://kosli.com) - a DevOps platform for software supply chain visibility and compliance.
+This repository contains hands-on learning labs to help DevOps engineers, Platform engineers, and software developers get familiar with [Kosli](https://kosli.com) - a compliance automation and change observability platform. Think of it as a flight recorder for your software delivery lifecycle (SDLC).
 
 ## About These Labs
 
-These labs provide a progressive, practical introduction to Kosli's core features. You'll learn how to track your software delivery process from build through deployment, establish compliance requirements, and maintain complete visibility into your software supply chain.
+These labs provide a progressive, practical introduction to Kosli's core features. You'll learn how to track your software delivery process from build through deployment, define compliance requirements, and record and enforce the controls in your software delivery.
 
 Each lab builds on the previous one, taking you from initial setup through runtime compliance enforcement.
 
@@ -18,11 +18,11 @@ Each lab builds on the previous one, taking you from initial setup through runti
 
 ### [Lab 1: Get Ready](lab-01-get-ready.md)
 
-Set up your Kosli account and verify the sample application pipeline.
+Log in to Kosli and verify the sample application pipeline.
 
 **You'll learn:**
 
-- Creating a Kosli account and organization
+- Logging in to Kosli
 - Creating a copy of the sample repository
 - Understanding the existing CI/CD pipeline
 
@@ -45,10 +45,10 @@ Record evidence about your artifacts and build process.
 
 - Attesting artifacts (binaries and Docker images)
 - Attaching JUnit test results
-- Generating and attesting Software Bill of Materials (SBOM)
-- Understanding the attestation audit trail
+- Attesting vulnerability scan results
+- Understanding binary provenance and the Evidence Vault
 
-### [Lab 4:  Release Controls and Compliance](lab-04-release-controls.md)
+### [Lab 4: Release Controls and Compliance](lab-04-release-controls.md)
 
 Record evidence about your release process and enforce deployment gates.
 
@@ -57,16 +57,17 @@ Record evidence about your release process and enforce deployment gates.
 - How to use Flow Templates and how they define compliance requirements
 - How to update an existing Flow to enforce specific attestations
 - The difference between compliant and non-compliant Trails
-- How to kosli assert artifact to gate deployments based on compliance status
+- How to use `kosli assert artifact` to gate deployments based on compliance status
 
 ### [Lab 5: Runtime Controls](lab-05-runtime-controls.md)
 
-Track what's running in production and enforce compliance policies.
+Track what's running in production and enforce Environment Policies.
 
 **You'll learn:**
+
 - Creating Kosli Environments
 - Snapshotting Docker environments
-- Defining compliance policies
+- Defining Environment Policies
 - Enforcing policy requirements
 - Viewing compliance status
 
@@ -82,8 +83,10 @@ Start with [Lab 1: Get Ready](lab-01-get-ready.md) and work through the labs seq
 ## Resources
 
 - [Kosli Documentation](https://docs.kosli.com/)
-- [Kosli Getting Started Guide](https://docs.kosli.com/getting_started/)
-- [Kosli CLI Reference](https://docs.kosli.com/client_reference/)
+- [What is Kosli?](https://docs.kosli.com/understand_kosli/what_is_kosli)
+- [How Kosli works](https://docs.kosli.com/understand_kosli/how_kosli_works)
+- [Kosli Glossary](https://docs.kosli.com/understand_kosli/glossary)
+- [Kosli CLI Reference](https://docs.kosli.com/client_reference/overview)
 - [Kosli Website](https://kosli.com)
 
 ## Support
