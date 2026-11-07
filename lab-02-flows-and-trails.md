@@ -207,15 +207,15 @@ Add the following steps to your workflow. Place them just after checking out the
 
 ```yaml
       - name: Clone down repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       
   #Your new additions
 
       - name: Setup Kosli CLI
-        uses: kosli-dev/setup-cli-action@v2
+        uses: kosli-dev/setup-cli-action@v5
         with:
           version:
-            2.11.32
+            2.54.0
 
       - name: Create/Update Flow
         run: |

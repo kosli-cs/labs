@@ -98,10 +98,10 @@ In `.github/workflows/full-pipeline.yaml`, find the `Deploy` job. Add the assert
 
 ```yaml
     - name: Setup Kosli CLI
-      uses: kosli-dev/setup-cli-action@v2
+      uses: kosli-dev/setup-cli-action@v5
       with:
         version:
-          2.11.32
+          2.54.0
     - name: Assert Compliance
       run: |
         IMAGE_NAME="ghcr.io/${IMAGE}:latest"
