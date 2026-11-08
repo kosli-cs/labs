@@ -1,0 +1,21 @@
+# Reference solution for Lab 7. Your own version lives in policies/binary-provenance/.
+ergo_spec: v0.5
+description: Every deployable artifact in the trail has binary provenance
+subjects:
+  artifact:
+    description: Each artifact named in the artifacts param
+    from: trail.compliance_status.artifacts_statuses named by each of $params.artifacts
+requirements:
+  binary_provenance:
+    description: The artifact was reported to Kosli with its build origin and source commit
+    subject: artifact
+    checks:
+      built_in_ci:
+        description: The artifact links to the CI build that produced it
+        assert: origin_url is a non-empty string
+      from_commit:
+        description: The artifact is linked to the git commit it was built from
+        assert: git_commit_info is an object
+      reported:
+        description: The artifact has a creation time
+        assert: created_at exists

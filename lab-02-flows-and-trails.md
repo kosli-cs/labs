@@ -1,4 +1,4 @@
-# Lab 2: Flows and Trails
+# Lab 2: Modeling your process: Flows and Trails
 
 ## Learning Goals
 
@@ -18,7 +18,7 @@ Kosli uses **Flows** and **Trails** to organize and track your software delivery
 - A **Flow** models a repeatable business or software process (like your CI/CD pipeline). It is the container for everything that happens within that process.
 - A **Trail** represents a single execution of that Flow, such as one CI build or one pull request. You begin a Trail each time the process runs, and you choose its identifier (a git commit SHA, a PR number, a release ticket ID) so that Trails map to concepts your team already works with.
 
-Think of a Flow as the container for your process, and Trails as the individual executions where you record what actually happened. What a *compliant* Trail must contain is defined by a **Flow Template**, which you'll add in Lab 4.
+Think of a Flow as the container for your process, and Trails as the individual executions where you record what actually happened. What a *compliant* Trail must contain is defined by a **Flow Template**, which you'll add in Lab 5.
 
 ## Prerequisites
 
@@ -63,7 +63,7 @@ kosli version
 - Click **Add** and copy the key immediately. Kosli only stores a hash of it, so it is shown once and cannot be retrieved later
 - Paste it somewhere you can find it again during these labs, you might need it several times.
 
-> :information_source: This is a **personal API key**, which authenticates as you. For real CI/CD pipelines, use a [service account](https://docs.kosli.com/administration/authentication/service_accounts) API key instead: it is scoped to a single Organization and has an explicit role. For these labs, a personal API key is fine.
+> :information_source: This is a **personal API key**, which authenticates as you. For real CI/CD pipelines, use a [service account](https://docs.kosli.com/administration/authentication/service_accounts) API key instead: it is scoped to a single Organization and has an explicit role. For now, a personal API key is fine: in Lab 8 you'll replace it with a service account API key.
 
 **Configure the API key for CLI use:**
 
@@ -101,7 +101,7 @@ Last Deployment At:  N/A
 Tags:                None
 ```
 
-> :bulb: The `--use-empty-template` flag creates a Flow without compliance requirements. In Lab 4, you'll learn how to add a Flow Template with specific attestation requirements.
+> :bulb: The `--use-empty-template` flag creates a Flow without compliance requirements. In Lab 5, you'll learn how to add a Flow Template with specific attestation requirements.
 
 Visit [app.kosli.com](https://app.kosli.com) and navigate to Flows to see your newly created Flow.
 
@@ -267,7 +267,7 @@ If anything did not go according to plan, you can reference our solution pipelin
 
 ## Next Steps
 
-In [Lab 3: Build Controls and Attestations](lab-03-build-controls.md), you'll learn how to attest artifacts and attach evidence like test results, SBOMs, and security scans to your Trails.
+In [Lab 3: Recording evidence: Artifacts and Attestations](lab-03-artifacts-and-attestations.md), you'll learn how to attest artifacts and attach evidence like test results, SBOMs, and security scans to your Trails.
 
 ## Resources
 

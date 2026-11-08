@@ -1,4 +1,4 @@
-# Lab 4: Release Controls and Trail Compliance
+# Lab 5: Defining compliance: Flow Templates and Deployment Gates
 
 ## Learning Goals
 
@@ -9,9 +9,7 @@
 
 ## Introduction
 
-In the previous labs, you've been recording evidence (Attestations) for your builds. Recording evidence is only part of the picture.
-
-**Release controls** validate that software is ready for production, so you also need to ensure that the *required* evidence is actually present before allowing a deployment to proceed. See [Controls](https://docs.kosli.com/understand_kosli/controls) for more on release controls.
+In Lab 3 you recorded evidence, and in Lab 4 you recorded decisions against controls. Recording is only part of the picture: you also need to ensure that the *required* evidence and decisions are actually present before allowing a deployment to proceed.
 
 A **Flow Template** defines what artifacts and attestations a trail must have to be compliant. 
 
@@ -27,8 +25,8 @@ By adding `kosli assert artifact` to your pipeline as a **deployment gate**, you
 
 ## Prerequisites
 
-- Completed [Lab 3: Build Controls and Attestations](lab-03-build-controls.md)
-- CI/CD pipeline successfully sending attestations to Kosli
+- Completed [Lab 4: Implementing controls: Controls and Decisions](lab-04-controls-and-decisions.md)
+- CI/CD pipeline successfully sending attestations and decisions to Kosli
 
 ## Exercise
 
@@ -36,7 +34,7 @@ By adding `kosli assert artifact` to your pipeline as a **deployment gate**, you
 
 In this lab, you will:
 
-- Define a Flow Template that requires unit tests and a vulnerability scan
+- Define a Flow Template that requires unit tests, a vulnerability scan and your control decisions
 - Update your existing Flow with these requirements
 - Verify that your current pipeline is compliant
 - Add a deployment gate step to your pipeline using `kosli assert artifact`
@@ -65,12 +63,18 @@ trail:
       attestations:
         - name: security-scan
           type: generic
+        - name: LAB-001-decision
+          type: decision
+        - name: LAB-002-decision
+          type: decision
 ```
 
-This template matches the structure of the attestations we set up in Lab 3:
+This template matches the attestations we set up in Lab 3 and the decisions from Lab 4:
 
 1. An `application` artifact which must have `unit-tests`.
-2. A `docker-image` artifact which must have a `security-scan`.
+2. A `docker-image` artifact which must have a `security-scan`, and a decision for the controls `LAB-001` and `LAB-002`.
+
+> :bulb: A decision is recorded as an attestation of type `decision`, named `<control>-decision` by default. Because the decisions were recorded with the Docker image's fingerprint, they belong to the `docker-image` artifact.
 
 > :bulb: If you also attested the SBOM in the optional part of Lab 3, you can require it too by adding `- name: sbom` with `type: sbom` under the `docker-image` attestations. If you didn't, leave it out: it is used in the optional non-compliance test below.
 
@@ -117,6 +121,8 @@ This command asks Kosli: *"Is this artifact (and its Trail) compliant?"* Because
 - **Non-compliant**: one or more artifacts or attestations in the template are missing, **or** one of the attestations made to the Trail is non-compliant.
   - The command exits with 1, failing the pipeline and preventing deployment.
 
+This includes your control decisions: a denied decision is a non-compliant attestation, so it blocks the deployment just like failing unit tests would. This is where the decisions recorded in Lab 4 are enforced.
+
 See [kosli assert artifact](https://docs.kosli.com/client_reference/kosli_assert_artifact/) and [Enforce policies](https://docs.kosli.com/getting_started/enforce_policies) for more details.
 
 #### 4. Test the deployment gate
@@ -155,6 +161,10 @@ To see the gate in action, you can simulate a failure.
       attestations:
         - name: security-scan
           type: generic
+        - name: LAB-001-decision
+          type: decision
+        - name: LAB-002-decision
+          type: decision
         - name: sbom  # Not attested by the pipeline!
           type: sbom
 ```
@@ -178,7 +188,7 @@ Before moving to the next lab, ensure you have:
 - ✅ Verified that a fully attested build passes the gate
 - ✅ Verified that the Trail shows as **Compliant** in the Kosli app
 
-If anything did not go according to plan, you can reference our solution pipeline in [pipelines/04-complete.yaml](pipelines/04-complete.yaml) and the Flow Template in [pipelines/04-flow-template.yaml](pipelines/04-flow-template.yaml).
+If anything did not go according to plan, you can reference our solution pipeline in [pipelines/05-complete.yaml](pipelines/05-complete.yaml) and the Flow Template in [pipelines/05-flow-template.yaml](pipelines/05-flow-template.yaml).
 
 ### Clean up
 
@@ -186,7 +196,7 @@ If you did the optional non-compliance test, make sure to revert `flow-template.
 
 ## Next Steps
 
-In [Lab 5: Runtime Controls](lab-05-runtime-controls.md), you'll learn how to create environments, snapshot what's running in production, and enforce Environment Policies.
+In [Lab 6: Monitoring runtime: Environments, Snapshots, and Policies](lab-06-environments-and-policies.md), you'll learn how to create environments, snapshot what's running in production, and require your controls in an Environment Policy.
 
 ## Resources
 

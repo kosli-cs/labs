@@ -1,4 +1,4 @@
-# Reference solution for Lab 4. Copy it to flow-template.yaml in the root of your repository.
+# Reference solution for Lab 5. Copy it to flow-template.yaml in the root of your repository.
 # yaml-language-server: $schema=https://docs.kosli.com/schemas/flow-template/v1.json
 version: 1
 trail:
@@ -11,3 +11,7 @@ trail:
       attestations:
         - name: security-scan
           type: generic
+        - name: LAB-001-decision
+          type: decision
+        - name: LAB-002-decision
+          type: decision

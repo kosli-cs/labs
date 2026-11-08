@@ -133,7 +133,7 @@ No cleanup is required for this lab. The deployed container is automatically sto
 
 ## Next Steps
 
-In [Lab 2: Flows and Trails](lab-02-flows-and-trails.md), you'll learn how to install the Kosli CLI, create Flows and Trails, and start integrating Kosli into your CI/CD pipeline.
+In [Lab 2: Modeling your process: Flows and Trails](lab-02-flows-and-trails.md), you'll learn how to install the Kosli CLI, create Flows and Trails, and start integrating Kosli into your CI/CD pipeline.
 
 ## Resources
 

@@ -1,4 +1,3 @@
-name: Main workflow
 on: [push, workflow_dispatch]
 env: # Set the secret as an input
   docker_username: ${{ github.actor }} 
@@ -129,7 +128,6 @@ jobs:
         output-file: 'sbom.spdx.json'
         upload-artifact: false
 
-
   Security-scan:
     runs-on: ubuntu-latest
     needs: Docker-image
@@ -208,9 +206,45 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Execute performance test
       run: bash ci/performance-test.sh     
+  Controls:
+    runs-on: ubuntu-latest
+    needs: [Build, Security-scan]
+    steps:
+    - name: Setup Kosli CLI
+      uses: kosli-dev/setup-cli-action@v5
+      with:
+        version:
+          2.54.0
+    - name: Fingerprint Docker image
+      run: |
+        FINGERPRINT=$(kosli fingerprint ghcr.io/${IMAGE}:latest \
+          --artifact-type oci \
+          --registry-username ${{ github.actor }} \
+          --registry-password ${{ secrets.GITHUB_TOKEN }})
+        echo "FINGERPRINT=${FINGERPRINT}" >> $GITHUB_ENV
+    - name: Decide LAB-001 Quality assurance
+      run: |
+        kosli evaluate policy \
+          --context trail=${APP_NAME}-pipeline/${GIT_COMMIT} \
+          --identifier attestation-compliant \
+          --params '{"artifact": "application", "attestation": "unit-tests"}' \
+          --control LAB-001 \
+          --flow ${APP_NAME}-pipeline \
+          --trail ${GIT_COMMIT} \
+          --fingerprint ${FINGERPRINT}
+    - name: Decide LAB-002 Vulnerability scanning
+      run: |
+        kosli evaluate policy \
+          --context trail=${APP_NAME}-pipeline/${GIT_COMMIT} \
+          --identifier attestation-compliant \
+          --params '{"artifact": "docker-image", "attestation": "security-scan"}' \
+          --control LAB-002 \
+          --flow ${APP_NAME}-pipeline \
+          --trail ${GIT_COMMIT} \
+          --fingerprint ${FINGERPRINT}
   Deploy:
     runs-on: ubuntu-latest
-    needs: [Docker-image, Security-scan, Component-test, Performance-test]
+    needs: [Docker-image, Security-scan, Component-test, Performance-test, Controls]
     steps:
     - name: Download code
       uses: actions/download-artifact@v8
@@ -228,10 +262,6 @@ jobs:
       with:
         version:
           2.54.0
-    - name: Update Kosli policy
-      run: kosli create policy labs-prod-requirements .kosli-policy.yml
-    - name: Attach policy to environment
-      run: kosli attach-policy labs-prod-requirements --environment labs-prod
     - name: Assert Compliance
       run: |
         IMAGE_NAME="ghcr.io/${IMAGE}:latest"
@@ -240,8 +270,5 @@ jobs:
           --flow ${APP_NAME}-pipeline
     - name: Deploy to production
       run: bash ci/start-application.sh
-    # The runner simulates a production host; the container is stopped again in the next step
-    - name: Kosli snapshot environment
-      run: kosli snapshot docker labs-prod
     - name: stop production environment
       run: bash ci/stop-application.sh
