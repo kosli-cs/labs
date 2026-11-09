@@ -5,27 +5,25 @@
 - Understand what attestations are and why they matter for compliance
 - Attest artifacts to Kosli
 - Attach test results (JUnit) as attestations
-- Attach Software Bill of Materials (SBOM) as attestations
+- Attach vulnerability scan results as attestations
 - Integrate attestation commands into your CI/CD pipeline
 
 ## Introduction
 
-**Attestations** are how you record facts about your software supply chain in Kosli.
+This lab is about **build controls**: the checks that secure your build chain, such as running tests, scanning for vulnerabilities, and establishing where an artifact came from.
 
-They are immutable pieces of evidence that prove certain activities occurred - like tests passing, security scans completing, or artifacts being built.
+An **Attestation** records that a specific control was executed and captures its result. Attestations are how you record the facts you care about in your software supply chain: immutable evidence that certain activities occurred, like tests passing, security scans completing, or artifacts being built.
 
-Kosli has different attestation types:
-A few examples:
+Kosli supports two kinds of attestation types:
 
-- Commons like: `artifact`,`generic`
-- Tool specific: `junit`,`snyk`
-- Custom: Types that you define yourself.
+- **Built-in types** for common controls, such as JUnit, Snyk, SonarCloud, pull requests and Jira. Use the `generic` type for controls that do not require automated evaluation.
+- **Custom types** that you define yourself with [`kosli create attestation-type`](https://docs.kosli.com/client_reference/kosli_create_attestation-type/), evaluated with jq rules.
 
-Each attestation is linked to a Trail and optionally to a specific artifact. This creates an auditable chain of evidence showing what happened during your software delivery process.
+Each Attestation is linked to a Trail and optionally to a specific Artifact. This creates an auditable chain of evidence showing what happened during your software delivery process.
 
-### Understanding artifact fingerprints
+### Artifact fingerprints and binary provenance
 
-Kosli identifies artifacts by their SHA256 fingerprint (hash). This fingerprint uniquely identifies the artifact regardless of where it's stored or what it's named. The Kosli CLI can automatically calculate fingerprints for:
+Kosli identifies Artifacts by their SHA256 fingerprint. Names and tags can change (a `latest` tag can point to different images over time), while a fingerprint cannot. This is what gives each artifact its **binary provenance**: a tamper-proof link from the Trail where it was built to the Environments where it later runs. The Kosli CLI can automatically calculate fingerprints for:
 
 - **Files**: JAR files, binaries, etc. (`--artifact-type file`)
 - **Directories**: Source code, build outputs (`--artifact-type dir`)
@@ -52,9 +50,9 @@ In this lab, you will:
 - Attest the Java application artifact (JAR file) to Kosli
 - Attest the Docker container image to Kosli
 - Attach JUnit test results as attestations
-- Generate and attest an SBOM (Software Bill of Materials)
-- Create shell scripts to integrate attestations into your workflow
-- View all attestations in the Kosli web interface
+- Attest the results of a vulnerability scan
+- Add attestation steps to your GitHub Actions workflow
+- View all attestations in the Kosli app
 
 ### Step-by-step instructions
 
@@ -77,7 +75,7 @@ Add this step after the "Build application" step:
             --commit-url ${COMMIT_URL}
 ```
 
-The `--name application` parameter gives this artifact a logical name in your Flow. This name will be used to attach other attestations (like tests) to this specific artifact.
+The `--name application` parameter is the artifact's `name`, which the Flow Template will reference in Lab 4. The same name is used to attach other attestations (like tests) to this specific artifact.
 
 See [kosli attest artifact](https://docs.kosli.com/client_reference/kosli_attest_artifact/) for more details.
 
@@ -133,38 +131,60 @@ Using `--artifact-type oci` tells Kosli to fetch the image manifest directly fro
 
 > :bulb: You can attest both the JAR and Docker image, or just the Docker image. Both approaches are valid - it depends on what you consider your deployable artifact.
 
-#### Generate and attest SBOM
+#### Attest the vulnerability scan
 
-Your workflow already generates an SBOM using Anchore. Let's attest it by adding steps to the `Docker-image` job in `.github/workflows/full-pipeline.yaml`.
+Your workflow already scans the Docker image for vulnerabilities with Trivy, in the `Security-scan` job. Right now the results only end up in the job log. Let's save them to a file and attest them to Kosli as evidence that the scan was performed, linked to the `docker-image` artifact.
 
-Add these steps after the "Generate SBOM for the docker image" step:
+In the `Security-scan` job of `.github/workflows/full-pipeline.yaml`, change the "Run Trivy vulnerability scanner" step so it writes its results to a JSON file:
 
 ```yaml
-    - name: Attest SBOM
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+      with:
+        image-ref: 'ghcr.io/${{ env.IMAGE }}:latest'
+        format: 'json'
+        output: 'trivy-results.json'
+        #exit-code: '1' #Defaults to 0 meaning that the action will not fail the build if vulnerabilities are found
+        ignore-unfixed: true
+        vuln-type: 'os,library'
+        severity: 'CRITICAL,HIGH'
+```
+
+> :bulb: We changed `format` from `table` to `json` and added `output`, so the results end up in a file we can attach to the attestation.
+
+Then add these steps after it:
+
+```yaml
+    - name: Setup Kosli CLI
+      uses: kosli-dev/setup-cli-action@v5
+      with:
+        version:
+          2.54.0
+    - name: Attest vulnerability scan
       run: |
         IMAGE_NAME="ghcr.io/${IMAGE}:latest"
         kosli attest generic \
           --flow ${APP_NAME}-pipeline \
           --trail ${GIT_COMMIT} \
-          --name docker-image.sbom \
+          --name docker-image.security-scan \
           --artifact-type oci ${IMAGE_NAME} \
-          --attachments sbom.spdx.json \
+          --compliant=true \
+          --description "Trivy vulnerability scan" \
+          --attachments trivy-results.json \
+          --annotate scan_tool=trivy \
           --registry-username ${{ github.actor }} \
           --registry-password ${{ secrets.GITHUB_TOKEN }}
-
 ```
 
-> :bulb: Generic attestations allow you to record any fact.
+The `--name docker-image.security-scan` links this attestation to the `docker-image` artifact. Kosli stores `trivy-results.json` in its Evidence Vault, and the `scan_tool` annotation shows which scanner produced it.
 
-The SBOM attestation is linked to the `docker-image` artifact. Kosli stores the SBOM in its Evidence Vault for future reference.
+> :bulb: Generic attestations allow you to record any fact. Here, `--compliant=true` records that the scan was performed, and the full results are available as evidence.
 
-> :bulb: An SBOM (Software Bill of Materials) lists all components and dependencies in your software. It's crucial for tracking vulnerabilities and license compliance.
-
-See [kosli attest sbom](https://docs.kosli.com/client_reference/kosli_attest_sbom/) for more details and [Attestations documentation](https://docs.kosli.com/getting_started/attestations/) for conceptual understanding.
+See [kosli attest generic](https://docs.kosli.com/client_reference/kosli_attest_generic/) for more details and [Attestations documentation](https://docs.kosli.com/getting_started/attestations/) for conceptual understanding.
 
 #### Verify the workflow integration
 
-Ensure your `.github/workflows/full-pipeline.yaml` now includes the new Kosli steps in the `Build` and `Docker-image` jobs.
+Ensure your `.github/workflows/full-pipeline.yaml` now includes the new Kosli steps in the `Build`, `Docker-image` and `Security-scan` jobs.
 
 #### Test the attestations
 
@@ -187,34 +207,38 @@ git push origin main
 3. Click on the latest Trail (your commit SHA)
 4. You should see:
    - **Artifacts**: The JAR file and Docker image with their fingerprints
-   - **Attestations**: Unit tests, SBOM attached to artifacts
+   - **Attestations**: Unit tests and the vulnerability scan attached to artifacts
    - **Timeline**: When each attestation was recorded
 5. Click on individual attestations to view details:
    - JUnit results showing test counts and any failures
-   - SBOM showing dependencies and components
+   - The vulnerability scan with its annotations and the attached `trivy-results.json`
    - Links to build URLs and commit URLs
 
 > :bulb: The Trail view provides a complete audit trail of everything that happened for this commit, with immutable evidence stored in Kosli.
 
-#### Optional: Attest vulnerability scans
+#### Optional: Attest the SBOM
 
-Your workflow already runs Trivy security scans. While not creating an attestation yet, you could extend this lab by attesting the scan results:
+Your workflow also generates an SBOM (Software Bill of Materials) of the Docker image with Anchore, in the "Generate SBOM for the docker image" step of the `Docker-image` job. SBOM is a built-in attestation type in Kosli, so you can extend this lab by attesting it with `kosli attest sbom`. Add this step after the "Generate SBOM for the docker image" step:
 
-```bash
-# Example for future enhancement
-# Replace gh_user with your GitHub username
-export DOCKER_IMAGE="<gh_user>/labs"
-
-kosli attest generic \
-  --flow labs-pipeline \
-  --trail $(git rev-parse HEAD) \
-  --name docker-image.security-scan \
-  --artifact-type oci ghcr.io/${DOCKER_IMAGE}:latest \
-  --compliant=true \
-  --description "Trivy scan completed"
+```yaml
+    - name: Attest SBOM
+      run: |
+        IMAGE_NAME="ghcr.io/${IMAGE}:latest"
+        kosli attest sbom ${IMAGE_NAME} \
+          --artifact-type oci \
+          --flow ${APP_NAME}-pipeline \
+          --trail ${GIT_COMMIT} \
+          --name docker-image.sbom \
+          --sbom-file sbom.spdx.json \
+          --registry-username ${{ github.actor }} \
+          --registry-password ${{ secrets.GITHUB_TOKEN }}
 ```
 
-> :bulb: Generic attestations allow you to record any fact. In production, you'd parse the Trivy results and set `--compliant` based on severity thresholds.
+Kosli reads the SBOM's format, creation time, the tools that produced it, the subject it describes and how many packages it lists, and stores the file in its Evidence Vault. Nothing in the SBOM is checked against the artifact: the attestation records what the SBOM claims.
+
+> :bulb: An SBOM lists all components and dependencies in your software. It's crucial for tracking vulnerabilities and license compliance.
+
+See [kosli attest sbom](https://docs.kosli.com/client_reference/kosli_attest_sbom/) for more details.
 
 ### Verification Checklist
 
@@ -224,14 +248,13 @@ Before moving to the next lab, ensure you have:
 - ✅ Workflow runs successfully with all attestation steps passing
 - ✅ Can see artifacts in the Kosli Trail view with their fingerprints
 - ✅ Can see JUnit test results attached to the application artifact
-- ✅ Can see SBOM attached to the Docker image artifact
-- ✅ Understand how attestations create an audit trail
+- ✅ Can see the vulnerability scan attached to the Docker image artifact
+- ✅ Understand how Attestations and binary provenance create an audit trail
 
-If anything did not go according to plan, you can reference our solution pipeline in [pipelines/03-complete.yaml](pipelines\03-complete.yaml)
+If anything did not go according to plan, you can reference our solution pipeline in [pipelines/03-complete.yaml](pipelines/03-complete.yaml)
 
 ## Next Steps
 
-lab-04-release-controls.md
 In [Lab 4: Release Controls](lab-04-release-controls.md), you'll learn how to check your artifact for compliance, just before deploying it to production.
 
 ## Resources
@@ -240,5 +263,7 @@ In [Lab 4: Release Controls](lab-04-release-controls.md), you'll learn how to ch
 - [Kosli Artifacts Documentation](https://docs.kosli.com/getting_started/artifacts/)
 - [kosli attest artifact CLI Reference](https://docs.kosli.com/client_reference/kosli_attest_artifact/)
 - [kosli attest junit CLI Reference](https://docs.kosli.com/client_reference/kosli_attest_junit/)
-- [kosli attest sbom CLI Reference](https://docs.kosli.com/client_reference/kosli_attest_sbom/)
+- [kosli attest generic CLI Reference](https://docs.kosli.com/client_reference/kosli_attest_generic/)
 - [Attestation Types](https://docs.kosli.com/getting_started/attestations/#attestation-types)
+- [Controls](https://docs.kosli.com/understand_kosli/controls)
+- [kosli attest sbom CLI Reference](https://docs.kosli.com/client_reference/kosli_attest_sbom/)

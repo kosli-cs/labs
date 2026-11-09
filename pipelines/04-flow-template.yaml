@@ -1,0 +1,13 @@
+# Reference solution for Lab 4. Copy it to flow-template.yaml in the root of your repository.
+# yaml-language-server: $schema=https://docs.kosli.com/schemas/flow-template/v1.json
+version: 1
+trail:
+  artifacts:
+    - name: application
+      attestations:
+        - name: unit-tests
+          type: junit
+    - name: docker-image
+      attestations:
+        - name: security-scan
+          type: generic
