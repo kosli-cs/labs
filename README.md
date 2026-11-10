@@ -13,12 +13,8 @@ Each lab builds on the previous one, taking you from initial setup through contr
 - A GitHub account
 - Basic familiarity with Git, CI/CD concepts, and command line
 - No prior Kosli experience required
-- The Admin role in your Kosli Organization, with the Controls feature (beta) enabled (Labs 4, 7 and 8)
+- The Admin role in a Kosli Organization (Labs 4, 7 and 8)
 - [Terraform](https://developer.hashicorp.com/terraform/install) 1.10 or later (Lab 8)
-
-## Lab Structure
-
-The lab titles follow [How Kosli works](https://docs.kosli.com/understand_kosli/how_kosli_works), so you can read the matching section of the docs before each lab.
 
 ### [Lab 1: Get Ready](lab-01-get-ready.md)
 
