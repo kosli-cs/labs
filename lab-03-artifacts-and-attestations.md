@@ -112,7 +112,7 @@ Add these steps after the "push docker" step:
       uses: kosli-dev/setup-cli-action@v5
       with:
         version:
-          2.54.0
+          2.55.1
     - name: Attest Docker image
       run: |
         IMAGE_NAME="ghcr.io/${IMAGE}:latest"
@@ -159,7 +159,7 @@ Then add these steps after it:
       uses: kosli-dev/setup-cli-action@v5
       with:
         version:
-          2.54.0
+          2.55.1
     - name: Attest vulnerability scan
       run: |
         IMAGE_NAME="ghcr.io/${IMAGE}:latest"

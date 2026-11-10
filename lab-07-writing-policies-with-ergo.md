@@ -54,6 +54,8 @@ curl -s -H "Authorization: Bearer $KOSLI_API_TOKEN" \
   | jq '.compliance_status.artifacts_statuses | to_entries[] | {name: .key, origin_url: .value.origin_url, created_at: .value.created_at, git_commit_info: .value.git_commit_info}'
 ```
 
+> :information_source: If your Organization is hosted in the US, replace `https://app.kosli.com` with `https://app.us.kosli.com`.
+
 Each artifact under `compliance_status.artifacts_statuses` carries its provenance: `origin_url` (the build URL), `created_at` and `git_commit_info`. These are the fields your policy will check.
 
 > :bulb: Drop the `jq` filter after `jq` to see the whole trail moment, including each artifact's `attestations_statuses`, which the Lab 4 policy reads.

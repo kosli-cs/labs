@@ -105,7 +105,7 @@ In `.github/workflows/full-pipeline.yaml`, find the `Deploy` job. Add the assert
       uses: kosli-dev/setup-cli-action@v5
       with:
         version:
-          2.54.0
+          2.55.1
     - name: Assert Compliance
       run: |
         IMAGE_NAME="ghcr.io/${IMAGE}:latest"
@@ -174,7 +174,7 @@ To see the gate in action, you can simulate a failure.
 2. Commit and push.
 3. Watch the pipeline.
 4. The `Assert Compliance` step should **fail**, preventing the `Deploy to production` step from running.
-5. In the Kosli app, the Trail will be marked **Non-compliant**.
+5. In the Kosli app, the Trail will be marked **Incomplete**, because a required attestation is missing. A Trail is marked **Non-compliant** when an attestation is present but non-compliant.
 
 > :bulb: Don't forget to revert this change to make your pipeline green again!
 

@@ -27,7 +27,7 @@
 - All artifacts must have security scans
 - Specific attestations must be present
 
-Because each running artifact is identified by its fingerprint, Kosli traces it back to the Flows and Trails that assiciated with it. Together, Environments and Environment Policies link what you built to what is running, and flag anything that doesn't meet your requirements.
+Because each running artifact is identified by its fingerprint, Kosli traces it back to the Flows and Trails that are associated with it. Together, Environments and Environment Policies link what you built to what is running, and flag anything that doesn't meet your requirements.
 
 ### Understanding Environment Types
 
@@ -215,6 +215,8 @@ Add this step before the "Assert Compliance" step:
     - name: Attach policy to environment
       run: kosli attach-policy labs-prod-requirements --environment labs-prod
 ```
+
+> :bulb: The step prints `policy 'labs-prod-requirements' was updated` on every run, even when `.kosli-policy.yml` hasn't changed. Kosli only stores a new version when the content changes: check with `kosli get policy labs-prod-requirements`, which lists the number of versions.
 
 #### Gate the deployment on the Environment
 

@@ -70,7 +70,7 @@ kosli version
 ```bash
 # Set environment variables
 export KOSLI_API_TOKEN="your-api-key-here"
-export KOSLI_ORG="your-gh-username"
+export KOSLI_ORG="your-kosli-organization-name"
 ```
 
 See [Authenticating to Kosli](https://docs.kosli.com/getting_started/authenticating_to_kosli) and [Assigning flags via environment variables](https://docs.kosli.com/getting_started/install#assigning-flags-via-environment-variables) for more details.
@@ -94,7 +94,6 @@ You should see something like the following returned:
 ```bash
 Name:                labs-pipeline
 Description:         CI/CD pipeline for labs application
-Visibility:          private
 Template:            
                      version: 1
 Last Deployment At:  N/A
@@ -203,19 +202,17 @@ env:
 
 **2. Add Kosli steps**
 
-Add the following steps to your workflow. Place them just after checking out the code.
+Add the following steps to the `Build` job of your workflow, just after the "Clone down repository" step:
 
 ```yaml
       - name: Clone down repository
         uses: actions/checkout@v7
-      
-  #Your new additions
 
       - name: Setup Kosli CLI
         uses: kosli-dev/setup-cli-action@v5
         with:
           version:
-            2.54.0
+            2.55.1
 
       - name: Create/Update Flow
         run: |
@@ -231,6 +228,8 @@ Add the following steps to your workflow. Place them just after checking out the
 ```
 
 > :bulb: We use the `kosli-dev/setup-cli-action` to install the CLI. The `env` variables we set earlier ensure the CLI is authenticated.
+
+:warning: **Flow name:** the pipeline names the Flow after your repository: `${APP_NAME}-pipeline`, where `APP_NAME` is the repository name. If you named your repository `labs` as in Lab 1, that is the `labs-pipeline` Flow you created by hand above, and the labs refer to it as `labs-pipeline` from here on. If your repository has a different name, the pipeline creates a separate Flow called `<your-repo-name>-pipeline`: use that name wherever the labs say `labs-pipeline`.
 
 #### Test the integration
 

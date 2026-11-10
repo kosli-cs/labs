@@ -1,8 +1,9 @@
 name: Main workflow
 on: [push, workflow_dispatch]
-env: # Set the secret as an input
-  docker_username: ${{ github.actor }} 
-  docker_password: ${{ secrets.GITHUB_TOKEN }} #Nees to be set to be made available to the workflow
+env:
+  # Image namespace: the actor can be a bot or a user the token can't publish under
+  docker_username: ${{ github.repository_owner }}
+  docker_password: ${{ secrets.GITHUB_TOKEN }}
   APP_NAME: ${{ github.event.repository.name }}
   BUILD_NUMBER: ${{ github.run_number }}
   GIT_REPO: ${{ github.repository }}
@@ -18,7 +19,7 @@ env: # Set the secret as an input
 jobs:
   Build:
     runs-on: ubuntu-latest
-    container: gradle:6-jdk11
+    container: gradle:8.0.1-jdk11
     steps:
       - name: Clone down repository
         uses: actions/checkout@v7
@@ -26,7 +27,7 @@ jobs:
         uses: kosli-dev/setup-cli-action@v5
         with:
           version:
-            2.54.0
+            2.55.1
 
       # The Flow and its template are managed with Terraform (Lab 8)
       - name: Begin Trail
@@ -38,7 +39,7 @@ jobs:
         run: bash ci/build-app.sh
       - name: Attest application artifact
         run: |
-          JAR_FILE=$(ls app/build/libs/app-*-all.jar)
+          JAR_FILE=$(ls app/build/libs/app-*.jar)
           kosli attest artifact ${JAR_FILE} \
             --artifact-type file \
             --flow ${APP_NAME}-pipeline \
@@ -65,11 +66,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: [Build]
     steps:
-      - name: Download code
-        uses: actions/download-artifact@v8
+      - name: Clone down repository
+        uses: actions/checkout@v7
         with:
-          name: code
-          path: .
+          # super-linter diffs against main and the push's before-SHA
+          fetch-depth: 0
       - name: run linting
         uses: super-linter/super-linter/slim@v9
         env:
@@ -102,7 +103,7 @@ jobs:
       uses: kosli-dev/setup-cli-action@v5
       with:
         version:
-          2.54.0
+          2.55.1
     - name: Attest Docker image
       run: |
         IMAGE_NAME="ghcr.io/${IMAGE}:latest"
@@ -154,7 +155,7 @@ jobs:
       uses: kosli-dev/setup-cli-action@v5
       with:
         version:
-          2.54.0
+          2.55.1
     - name: Attest vulnerability scan
       run: |
         IMAGE_NAME="ghcr.io/${IMAGE}:latest"
@@ -211,7 +212,7 @@ jobs:
       uses: kosli-dev/setup-cli-action@v5
       with:
         version:
-          2.54.0
+          2.55.1
     - name: Fingerprint Docker image
       run: |
         FINGERPRINT=$(kosli fingerprint ghcr.io/${IMAGE}:latest \
@@ -268,7 +269,7 @@ jobs:
       uses: kosli-dev/setup-cli-action@v5
       with:
         version:
-          2.54.0
+          2.55.1
     # The Environment Policy and its attachment are managed with Terraform (Lab 8)
     - name: Assert Compliance
       run: |

@@ -117,6 +117,8 @@ curl -L --create-dirs -o policies/lib/ergo.rego \
 
 > :bulb: The `ergo_spec` in the YAML must match the Ergo release: `rego-v0.5.0` reads `ergo_spec: v0.5`.
 
+Commit `policies/lib/ergo.rego` together with your policies, so everyone tests and publishes against the same pinned Ergo version.
+
 #### Test the policy against your Trail
 
 Before publishing, evaluate the local files against your latest Trail. `--path` sends the files with the evaluation. Kosli runs them exactly as it will run the published policy, and records nothing:
@@ -129,7 +131,7 @@ kosli evaluate policy \
   --params '{"artifact": "application", "attestation": "unit-tests"}'
 ```
 
-> :warning: Use the commit SHA of a pipeline run that completed Lab 3, e.g. after `git pull`. The Trail must contain the attestations.
+> :warning: `$(git rev-parse HEAD)` must be a commit you have pushed, whose pipeline run completed Lab 3. Run `git pull` first and make sure you have no unpushed local commits, otherwise the Trail is not found or has no attestations.
 
 The command prints `RESULT: ALLOWED`. Now try an attestation that doesn't exist:
 
@@ -179,7 +181,7 @@ Add a new `Controls` job to `.github/workflows/full-pipeline.yaml`, for example 
       uses: kosli-dev/setup-cli-action@v5
       with:
         version:
-          2.54.0
+          2.55.1
     - name: Fingerprint Docker image
       run: |
         FINGERPRINT=$(kosli fingerprint ghcr.io/${IMAGE}:latest \
@@ -235,7 +237,7 @@ See [kosli evaluate policy](https://docs.kosli.com/client_reference/kosli_evalua
 1. Commit the changes to your workflow file:
 
 ```bash
-git add .github/workflows/full-pipeline.yaml
+git add policies/lib/ergo.rego .github/workflows/full-pipeline.yaml
 git commit -m "Record decisions against controls"
 git push origin main
 ```
