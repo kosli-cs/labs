@@ -1,4 +1,4 @@
-# Lab 5: Runtime Controls
+# Lab 6: Monitoring runtime: Environments, Snapshots, and Policies
 
 ## Learning Goals
 
@@ -6,13 +6,12 @@
 - Create a Kosli Environment to represent your deployment target
 - Snapshot a Docker environment from CI to report what's running
 - Understand Environment Snapshots and change tracking
-- Create and configure Environment Policies
+- Create and configure Environment Policies that require controls
+- Gate a deployment on an Environment
 - Attach Policies to Environments for enforcement
 - Integrate environment snapshotting into your CI/CD pipeline
 
 ## Introduction
-
-This lab is about **runtime controls**: monitoring and enforcement in production, such as change records and drift detection. See [Controls](https://docs.kosli.com/understand_kosli/controls) for more.
 
 **Kosli Environments** record the artifacts running in your runtime environments (dev, staging, production, etc.) and how they change. Every time you report an **Environment Snapshot** that differs from the previous one, Kosli creates an immutable record of:
 
@@ -28,7 +27,7 @@ This lab is about **runtime controls**: monitoring and enforcement in production
 - All artifacts must have security scans
 - Specific attestations must be present
 
-Because each running artifact is identified by its fingerprint, Kosli traces it back to the Flows and Trails that assiciated with it. Together, Environments and Environment Policies link what you built to what is running, and flag anything that doesn't meet your requirements.
+Because each running artifact is identified by its fingerprint, Kosli traces it back to the Flows and Trails that are associated with it. Together, Environments and Environment Policies link what you built to what is running, and flag anything that doesn't meet your requirements.
 
 ### Understanding Environment Types
 
@@ -49,7 +48,7 @@ See [Environments documentation](https://docs.kosli.com/getting_started/environm
 
 ## Prerequisites
 
-- Completed [Lab 4: Release Controls and Compliance](lab-04-release-controls.md)
+- Completed [Lab 5: Defining compliance: Flow Templates and Deployment Gates](lab-05-flow-templates-and-gates.md)
 - Kosli CLI installed and configured
 - Artifacts and attestations flowing through your pipeline
 - Understanding of your deployment process
@@ -134,21 +133,26 @@ _schema: https://docs.kosli.com/schemas/policy/v1
 artifacts:
   provenance:
     required: true  # All artifacts must be part of a Flow
-  
+
+  trail-compliance:
+    required: true  # All artifacts must come from a Compliant Trail
+
   attestations:
-    - name: unit-tests  # Must have unit test attestation
-      type: junit
-    - name: security-scan  # Must have a vulnerability scan attestation
-      type: "*"  # Any attestation type (Lab 3 attests it as generic)
+    - type: decision
+      for_control: LAB-001  # Quality assurance
+    - type: decision
+      for_control: LAB-002  # Vulnerability scanning
 ```
 
 This policy requires:
 
 1. All running artifacts must have been attested to Kosli (provenance)
-2. All artifacts must have JUnit test results
-3. All artifacts must have a vulnerability scan
+2. All artifacts must come from a **Compliant** Trail, i.e. one that satisfies the Flow Template from Lab 5 (`trail-compliance`)
+3. All artifacts must have a passing decision for the controls `LAB-001` and `LAB-002`
 
-> :bulb: You can also require `trail-compliance`, meaning every running artifact must come from a **Compliant** Trail in its Flow. See [Environment Policies](https://docs.kosli.com/getting_started/policies#trail-compliance).
+Notice what the policy does *not* say: nothing about JUnit, Trivy or attestation names. It says "control `LAB-001` has been satisfied". How that is judged lives in the policy that decides the control, from Lab 4. If you switch test framework or scanner tomorrow, this Environment Policy stays the same.
+
+> :bulb: A policy that refers to a control that doesn't exist is rejected, so create the controls (Lab 4) before the policy. See [Requiring controls in environment policies](https://docs.kosli.com/tutorials/working_with_controls#requiring-controls-in-environment-policies).
 
 Create the policy in Kosli:
 
@@ -191,13 +195,13 @@ Return to the Kosli app:
 <details>
 <summary>:bulb: If your artifact is non-compliant, it might be because:</summary>
 
-- The attestation names in your workflow don't match the policy
-- Some attestations are missing
+- A decision for `LAB-001` or `LAB-002` is missing, or was denied
+- The Trail is not compliant with the Flow Template
 - The artifact wasn't properly attested in the first place
 
 </details>
 
-> :bulb: Environment Policies are evaluated on every snapshot, which tells you about non-compliance *after* the fact. To block a non-compliant artifact *before* it is deployed, use a policy enforcement gate with `kosli assert artifact`, described in the `Optional: Policy enforcement gate` section.
+> :bulb: Environment Policies are evaluated on every snapshot, which tells you about non-compliance *after* the fact. To block a non-compliant artifact *before* it is deployed, use a policy enforcement gate with `kosli assert artifact`, which you'll set up below.
 
 #### Manage policy in CI
 
@@ -212,9 +216,30 @@ Add this step before the "Assert Compliance" step:
       run: kosli attach-policy labs-prod-requirements --environment labs-prod
 ```
 
+> :bulb: The step prints `policy 'labs-prod-requirements' was updated` on every run, even when `.kosli-policy.yml` hasn't changed. Kosli only stores a new version when the content changes: check with `kosli get policy labs-prod-requirements`, which lists the number of versions.
+
+#### Gate the deployment on the Environment
+
+In Lab 5, your deployment gate asserted against the Flow Template. Now that the Environment has a policy, assert against the Environment instead. Change the `Assert Compliance` step in the `Deploy` job:
+
+```yaml
+    - name: Assert Compliance
+      run: |
+        IMAGE_NAME="ghcr.io/${IMAGE}:latest"
+        kosli assert artifact ${IMAGE_NAME} \
+          --artifact-type oci \
+          --environment labs-prod
+```
+
+`--environment` checks the artifact against every policy attached to `labs-prod`. Because the policy requires `trail-compliance`, the Flow Template from Lab 5 is still enforced, and on top of it the controls. This step is the Policy Enforcement Point: the decisions are recorded in the `Controls` job, and enforced here.
+
+`kosli assert artifact` supports three assertion scopes: `--environment` (all policies attached to the environment), `--policy` (specific named policies), or neither (the Flow Template, as in Lab 5). `--environment` and `--policy` are mutually exclusive.
+
+See [Enforce policies](https://docs.kosli.com/getting_started/enforce_policies) and [kosli assert artifact](https://docs.kosli.com/client_reference/kosli_assert_artifact/) for more details.
+
 #### Verify workflow integration
 
-Ensure your `.github/workflows/full-pipeline.yaml` now includes the policy update and snapshot steps in the `Deploy` job.
+Ensure your `.github/workflows/full-pipeline.yaml` now includes the policy update, the Environment assertion and the snapshot steps in the `Deploy` job.
 
 #### Test the complete integration
 
@@ -234,27 +259,19 @@ git push origin main
    - Verify the running artifact's compliance status
    - Review which attestations are present
 
-> :bulb: Your artifact should now be compliant since you've been attesting unit tests and vulnerability scans in previous labs.
+> :bulb: Your artifact should now be compliant, since your pipeline records the evidence (Lab 3) and the decisions (Lab 4) on every run.
 
-#### Optional: Policy enforcement gate
+#### Optional: Assert against a specific policy
 
-You can use Environment Policies as deployment gates to prevent non-compliant artifacts from being deployed. `kosli assert artifact` supports three assertion scopes: `--environment` (all policies attached to the environment), `--policy` (specific named policies), or neither (the Flow Template, as in Lab 4). `--environment` and `--policy` are mutually exclusive.
+You can also assert against named policies, regardless of which environment they are attached to. This is useful as a promotion gate between stages:
 
 ```bash
-# Assert against all policies attached to the environment
-kosli assert artifact ghcr.io/${IMAGE}:latest \
-  --artifact-type oci \
-  --environment labs-prod
-
-# Or assert against specific policies, regardless of environment attachment
 kosli assert artifact ghcr.io/${IMAGE}:latest \
   --artifact-type oci \
   --policy labs-prod-requirements
 ```
 
-If the artifact is non-compliant, this command exits with a non-zero status, failing your deployment.
-
-See [Enforce policies](https://docs.kosli.com/getting_started/enforce_policies) and [kosli assert artifact](https://docs.kosli.com/client_reference/kosli_assert_artifact/) for more details.
+If the artifact is non-compliant, this command exits with a non-zero status.
 
 #### Understanding policy expressions
 
@@ -288,35 +305,21 @@ Before completing this lab, ensure you have:
 - ✅ Created a `.kosli-policy.yml` file with compliance requirements
 - ✅ Created the policy in Kosli and attached it to your environment
 - ✅ Updated workflow with policy update and snapshot steps
+- ✅ Changed the deployment gate to assert against the `labs-prod` Environment
 - ✅ Workflow runs successfully with policy updates and snapshotting
 - ✅ Can see environment snapshots in the Kosli app
 - ✅ Can see the compliance state (Compliant / Non-compliant / Unknown) for running artifacts
 - ✅ Understand how policies enforce requirements
 
-If anything did not go according to plan, you can reference our solution pipeline in [pipelines/05-complete.yaml](pipelines/05-complete.yaml) and the policy in [pipelines/05-kosli-policy.yml](pipelines/05-kosli-policy.yml).
+If anything did not go according to plan, you can reference our solution pipeline in [pipelines/06-complete.yaml](pipelines/06-complete.yaml) and the policy in [pipelines/06-kosli-policy.yml](pipelines/06-kosli-policy.yml).
 
 ### Clean up
 
 No cleanup is required. Environments, snapshots, and policies remain for audit and historical tracking.
 
-## Conclusion
-
-Congratulations! You've completed the Kosli learning labs. You now know how to:
-
-1. Set up Kosli and integrate it with your CI/CD pipeline
-2. Create Flows and Trails to track your software delivery process
-3. Attest artifacts and attach evidence (tests, vulnerability scans, SBOMs)
-4. Create environments and track what's running
-5. Define compliance requirements with Flow Templates and Environment Policies, and enforce them with deployment gates
-
-You have implemented build, release and runtime controls, with an immutable record that links every running artifact back to the commit, Trail and evidence that produced it.
-
 ## Next Steps
 
-- Explore [custom attestation types](https://docs.kosli.com/getting_started/attestations/#attestation-types) for your specific tools
-- Set up [Kubernetes environment reporting](https://docs.kosli.com/tutorials/report_k8s_envs) if you use K8s
-- Record decisions against your organization's [controls](https://docs.kosli.com/tutorials/working_with_controls) (beta)
-- Explore the [Kosli API](https://docs.kosli.com/api-reference/overview) for custom integrations
+In [Lab 7: Writing policies: Ergo](lab-07-writing-policies-with-ergo.md), you'll write your own Ergo policy for a third control, binary provenance, and require it in this Environment Policy.
 
 ## Resources
 

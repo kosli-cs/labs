@@ -1,12 +1,13 @@
 {
     "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.14.2/.schema/devbox.schema.json",
   "packages": [
-    "gradle@6",
+    "gradle@8.0.1",
     "jdk@11",
     "binutils",
     "git",
     "curl",
-    "jq"
+    "jq",
+    "terraform"
   ],
     "shell": {
       "init_hook": [

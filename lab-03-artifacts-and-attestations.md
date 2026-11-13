@@ -1,4 +1,4 @@
-# Lab 3: Build Controls and Attestations
+# Lab 3: Recording evidence: Artifacts and Attestations
 
 ## Learning Goals
 
@@ -10,7 +10,7 @@
 
 ## Introduction
 
-This lab is about **build controls**: the checks that secure your build chain, such as running tests, scanning for vulnerabilities, and establishing where an artifact came from.
+In this lab you record evidence about your software: the artifacts you build, and facts about them such as test results and vulnerability scans. In Lab 4 you'll turn this evidence into decisions against **controls**.
 
 An **Attestation** records that a specific control was executed and captures its result. Attestations are how you record the facts you care about in your software supply chain: immutable evidence that certain activities occurred, like tests passing, security scans completing, or artifacts being built.
 
@@ -36,7 +36,7 @@ See [Artifacts documentation](https://docs.kosli.com/getting_started/artifacts/)
 
 ## Prerequisites
 
-- Completed [Lab 2: Flows and Trails](lab-02-flows-and-trails.md)
+- Completed [Lab 2: Modeling your process: Flows and Trails](lab-02-flows-and-trails.md)
 - Kosli CLI installed and configured
 - Your copy of the labs repository with Flow and Trail creation working
 - Understanding of your application's build process
@@ -75,7 +75,7 @@ Add this step after the "Build application" step:
             --commit-url ${COMMIT_URL}
 ```
 
-The `--name application` parameter is the artifact's `name`, which the Flow Template will reference in Lab 4. The same name is used to attach other attestations (like tests) to this specific artifact.
+The `--name application` parameter is the artifact's `name`, which the Flow Template will reference in Lab 5. The same name is used to attach other attestations (like tests) to this specific artifact.
 
 See [kosli attest artifact](https://docs.kosli.com/client_reference/kosli_attest_artifact/) for more details.
 
@@ -112,7 +112,7 @@ Add these steps after the "push docker" step:
       uses: kosli-dev/setup-cli-action@v5
       with:
         version:
-          2.54.0
+          2.55.1
     - name: Attest Docker image
       run: |
         IMAGE_NAME="ghcr.io/${IMAGE}:latest"
@@ -159,7 +159,7 @@ Then add these steps after it:
       uses: kosli-dev/setup-cli-action@v5
       with:
         version:
-          2.54.0
+          2.55.1
     - name: Attest vulnerability scan
       run: |
         IMAGE_NAME="ghcr.io/${IMAGE}:latest"
@@ -255,7 +255,7 @@ If anything did not go according to plan, you can reference our solution pipelin
 
 ## Next Steps
 
-In [Lab 4: Release Controls](lab-04-release-controls.md), you'll learn how to check your artifact for compliance, just before deploying it to production.
+In [Lab 4: Implementing controls: Controls and Decisions](lab-04-controls-and-decisions.md), you'll turn the evidence you just recorded into decisions against controls.
 
 ## Resources
 
