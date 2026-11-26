@@ -1,0 +1,17 @@
+# Reference solution for Lab 7. Copy it to .kosli-policy.yml in the root of your repository.
+_schema: https://docs.kosli.com/schemas/policy/v1
+
+artifacts:
+  provenance:
+    required: true  # All artifacts must be part of a Flow
+
+  trail-compliance:
+    required: true  # All artifacts must come from a Compliant Trail (the Flow Template from Lab 5)
+
+  attestations:
+    - type: decision
+      for_control: LAB-001  # Quality assurance
+    - type: decision
+      for_control: LAB-002  # Vulnerability scanning
+    - type: decision
+      for_control: LAB-003  # Binary provenance

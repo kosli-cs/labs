@@ -33,3 +33,7 @@ koslicommands.sh
 secret.txt
 Labs.md
 .github/prompts/
+# Terraform (Lab 8): local state holds the CI API key, never commit it
+.terraform/
+*.tfstate
+*.tfstate.*

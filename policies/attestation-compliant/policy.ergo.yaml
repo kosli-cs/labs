@@ -1,0 +1,20 @@
+ergo_spec: v0.5
+description: An attestation on an artifact in the trail is recorded and compliant
+subjects:
+  artifact:
+    description: The artifact named by the artifact param
+    from: trail.compliance_status.artifacts_statuses named by $params.artifact
+  attestation:
+    description: The attestation named by the attestation param, on that artifact
+    from: artifact.attestations_statuses named by $params.attestation
+requirements:
+  attestation_compliant:
+    description: The artifact carries a recorded, compliant attestation
+    subject: attestation
+    checks:
+      recorded:
+        description: The attestation is recorded on the artifact
+        assert: status is "COMPLETE"
+      compliant:
+        description: The attestation is compliant
+        assert: is_compliant is true

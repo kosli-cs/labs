@@ -58,20 +58,52 @@
       "last_modified": "2025-11-23T21:50:36Z",
       "resolved": "github:NixOS/nixpkgs/ee09932cedcef15aaf476f9343d1dea2cb77e261?lastModified=1763934636"
     },
-    "gradle@6": {
-      "last_modified": "2021-04-12T08:34:02Z",
+    "gradle@8.0.1": {
+      "last_modified": "2023-07-24T21:56:31Z",
       "plugin_version": "0.0.1",
-      "resolved": "github:NixOS/nixpkgs/dce8fc727dc2891628e4f878bb18af643b7b255d#gradle",
+      "resolved": "github:NixOS/nixpkgs/dfcffbd74fd6f0419370d8240e445252a39f4d10#gradle",
       "source": "devbox-search",
-      "version": "6.8.3",
+      "version": "8.0.1",
       "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/lrh7pjhni25c21llri3v1ya6n3nylng4-gradle-8.0.1",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/lrh7pjhni25c21llri3v1ya6n3nylng4-gradle-8.0.1"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/5h0z90r6r8c4s9x72ik0jp6sf782h4j0-gradle-8.0.1",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/5h0z90r6r8c4s9x72ik0jp6sf782h4j0-gradle-8.0.1"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/7k8494nxy4x2sh8d0rzpmmh6pmk1q1wf-gradle-8.0.1",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/7k8494nxy4x2sh8d0rzpmmh6pmk1q1wf-gradle-8.0.1"
+        },
         "x86_64-linux": {
           "outputs": [
             {
-              "path": "/nix/store/8yb3wabzz01b1dabrr99s1zzmji5skgv-gradle-6.8.3",
+              "name": "out",
+              "path": "/nix/store/83jn6p607rjb784jvypvx5r30pgq7kwa-gradle-8.0.1",
               "default": true
             }
-          ]
+          ],
+          "store_path": "/nix/store/83jn6p607rjb784jvypvx5r30pgq7kwa-gradle-8.0.1"
         }
       }
     },
@@ -130,6 +162,10 @@
           ]
         }
       }
+    },
+    "terraform": {
+      "resolved": "github:NixOS/nixpkgs/ee09932cedcef15aaf476f9343d1dea2cb77e261#terraform",
+      "source": "nixpkg"
     }
   }
 }

@@ -1,8 +1,9 @@
 name: Main workflow
 on: [push, workflow_dispatch]
-env: # Set the secret as an input
-  docker_username: ${{ github.actor }} 
-  docker_password: ${{ secrets.GITHUB_TOKEN }} #Nees to be set to be made available to the workflow
+env:
+  # Image namespace: the actor can be a bot or a user the token can't publish under
+  docker_username: ${{ github.repository_owner }}
+  docker_password: ${{ secrets.GITHUB_TOKEN }}
   APP_NAME: ${{ github.event.repository.name }}
   BUILD_NUMBER: ${{ github.run_number }}
   GIT_REPO: ${{ github.repository }}
@@ -18,15 +19,15 @@ env: # Set the secret as an input
 jobs:
   Build:
     runs-on: ubuntu-latest
-    container: gradle:6-jdk11
+    container: gradle:8.0.1-jdk11
     steps:
       - name: Clone down repository
-        uses: actions/checkout@v4 
+        uses: actions/checkout@v7
       - name: Setup Kosli CLI
-        uses: kosli-dev/setup-cli-action@v2
+        uses: kosli-dev/setup-cli-action@v5
         with:
           version:
-            2.11.32
+            2.55.1
 
       - name: Create/Update Flow
         run: |
@@ -43,7 +44,7 @@ jobs:
         run: bash ci/build-app.sh
       - name: Attest application artifact
         run: |
-          JAR_FILE=$(ls app/build/libs/app-*-all.jar)
+          JAR_FILE=$(ls app/build/libs/app-*.jar)
           kosli attest artifact ${JAR_FILE} \
             --artifact-type file \
             --flow ${APP_NAME}-pipeline \
@@ -61,7 +62,7 @@ jobs:
             --name application.unit-tests \
             --results-dir app/build/test-results/test/
       - name: Upload repo
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with: 
           name: code
           path: .
@@ -70,13 +71,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: [Build]
     steps:
-      - name: Download code
-        uses: actions/download-artifact@v4
+      - name: Clone down repository
+        uses: actions/checkout@v7
         with:
-          name: code
-          path: .
+          # super-linter diffs against main and the push's before-SHA
+          fetch-depth: 0
       - name: run linting
-        uses: super-linter/super-linter/slim@v7 
+        uses: super-linter/super-linter/slim@v9
         env:
           DEFAULT_BRANCH: main
           # To report GitHub Actions status checks
@@ -89,12 +90,12 @@ jobs:
       packages: write
     steps:
     - name: Download code
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: code
         path: .
     - name: Log in to GHCR
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
@@ -104,10 +105,10 @@ jobs:
     - name: push docker
       run: bash ci/push-docker.sh
     - name: Setup Kosli CLI
-      uses: kosli-dev/setup-cli-action@v2
+      uses: kosli-dev/setup-cli-action@v5
       with:
         version:
-          2.11.32
+          2.55.1
     - name: Attest Docker image
       run: |
         IMAGE_NAME="ghcr.io/${IMAGE}:latest"
@@ -128,75 +129,62 @@ jobs:
         format: 'spdx-json'
         output-file: 'sbom.spdx.json'
         upload-artifact: false
-    - name: Attest SBOM
-      run: |
-        IMAGE_NAME="ghcr.io/${IMAGE}:latest"
-        kosli attest generic \
-          --flow ${APP_NAME}-pipeline \
-          --trail ${GIT_COMMIT} \
-          --name docker-image.sbom \
-          --artifact-type oci ${IMAGE_NAME} \
-          --attachments sbom.spdx.json \
-          --registry-username  ${{ github.actor }} \
-          --registry-password ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Generate SBOM for the docker image
-      uses: anchore/sbom-action@v0
-      with:
-        image: ghcr.io/${{ env.IMAGE }}:latest
-        format: 'spdx-json'
-        output-file: 'sbom.spdx.json'
-        upload-artifact: false
-    - name: Setup Kosli CLI
-      uses: kosli-dev/setup-cli-action@v2
-      with:
-        version:
-          2.11.32
-    - name: Attest SBOM
-      run: |
-        IMAGE_NAME="ghcr.io/${IMAGE}:latest"
-        kosli attest generic \
-          --flow ${APP_NAME}-pipeline \
-          --trail ${GIT_COMMIT} \
-          --name docker-image.sbom \
-          --artifact-type oci ${IMAGE_NAME} \
-          --attachments sbom.spdx.json
 
   Security-scan:
     runs-on: ubuntu-latest
     needs: Docker-image
     steps:
     - name: Download code
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: code
         path: .
     - name: Log in to GHCR
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
       with:
         image-ref: 'ghcr.io/${{ env.IMAGE }}:latest'
-        format: 'table'
+        format: 'json'
+        output: 'trivy-results.json'
         #exit-code: '1' #Defaults to 0 meaning that the action will not fail the build if vulnerabilities are found
         ignore-unfixed: true
         vuln-type: 'os,library'
         severity: 'CRITICAL,HIGH'
+    - name: Setup Kosli CLI
+      uses: kosli-dev/setup-cli-action@v5
+      with:
+        version:
+          2.55.1
+    - name: Attest vulnerability scan
+      run: |
+        IMAGE_NAME="ghcr.io/${IMAGE}:latest"
+        kosli attest generic \
+          --flow ${APP_NAME}-pipeline \
+          --trail ${GIT_COMMIT} \
+          --name docker-image.security-scan \
+          --artifact-type oci ${IMAGE_NAME} \
+          --compliant=true \
+          --description "Trivy vulnerability scan" \
+          --attachments trivy-results.json \
+          --annotate scan_tool=trivy \
+          --registry-username ${{ github.actor }} \
+          --registry-password ${{ secrets.GITHUB_TOKEN }}
   Component-test:
     runs-on: ubuntu-latest
     needs: Docker-image
     steps:
     - name: Download code
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: code
         path: .
     - name: Log in to GHCR
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
@@ -208,42 +196,74 @@ jobs:
     needs: Docker-image
     steps:
     - name: Download code
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: code
         path: .
     - name: Log in to GHCR
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Execute performance test
       run: bash ci/performance-test.sh     
+  Controls:
+    runs-on: ubuntu-latest
+    needs: [Build, Security-scan]
+    steps:
+    - name: Setup Kosli CLI
+      uses: kosli-dev/setup-cli-action@v5
+      with:
+        version:
+          2.55.1
+    - name: Fingerprint Docker image
+      run: |
+        FINGERPRINT=$(kosli fingerprint ghcr.io/${IMAGE}:latest \
+          --artifact-type oci \
+          --registry-username ${{ github.actor }} \
+          --registry-password ${{ secrets.GITHUB_TOKEN }})
+        echo "FINGERPRINT=${FINGERPRINT}" >> $GITHUB_ENV
+    - name: Decide LAB-001 Quality assurance
+      run: |
+        kosli evaluate policy \
+          --context trail=${APP_NAME}-pipeline/${GIT_COMMIT} \
+          --identifier attestation-compliant \
+          --params '{"artifact": "application", "attestation": "unit-tests"}' \
+          --control LAB-001 \
+          --flow ${APP_NAME}-pipeline \
+          --trail ${GIT_COMMIT} \
+          --fingerprint ${FINGERPRINT}
+    - name: Decide LAB-002 Vulnerability scanning
+      run: |
+        kosli evaluate policy \
+          --context trail=${APP_NAME}-pipeline/${GIT_COMMIT} \
+          --identifier attestation-compliant \
+          --params '{"artifact": "docker-image", "attestation": "security-scan"}' \
+          --control LAB-002 \
+          --flow ${APP_NAME}-pipeline \
+          --trail ${GIT_COMMIT} \
+          --fingerprint ${FINGERPRINT}
   Deploy:
     runs-on: ubuntu-latest
-    needs: [Docker-image, Security-scan, Component-test, Performance-test]
+    needs: [Docker-image, Security-scan, Component-test, Performance-test, Controls]
     steps:
     - name: Download code
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: code 
         path: .
     - name: Log in to GHCR
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Setup Kosli CLI
-      uses: kosli-dev/setup-cli-action@v2
+      uses: kosli-dev/setup-cli-action@v5
       with:
         version:
-          2.11.32
-    - name: Update Kosli policy
-      run: kosli create policy labs-prod-requirements .kosli-policy.yml
-    - name: Attach policy to environment
-      run: kosli attach-policy labs-prod-requirements --environment labs-prod
+          2.55.1
     - name: Assert Compliance
       run: |
         IMAGE_NAME="ghcr.io/${IMAGE}:latest"
@@ -252,7 +272,5 @@ jobs:
           --flow ${APP_NAME}-pipeline
     - name: Deploy to production
       run: bash ci/start-application.sh
-    - name: Kosli snapshot environment
-      run: kosli snapshot docker labs-prod
     - name: stop production environment
       run: bash ci/stop-application.sh
