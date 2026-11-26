@@ -72,6 +72,7 @@ kosli version
 export KOSLI_API_TOKEN="your-api-key-here"
 export KOSLI_ORG="your-kosli-organization-name"
 ```
+> :bulb: Make sure your Kosli Organisation existing, otherwise you might see access errors running CLI commands
 
 See [Authenticating to Kosli](https://docs.kosli.com/getting_started/authenticating_to_kosli) and [Assigning flags via environment variables](https://docs.kosli.com/getting_started/install#assigning-flags-via-environment-variables) for more details.
 
